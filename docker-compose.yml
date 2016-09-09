@@ -1,0 +1,133 @@
+version: '2'
+networks:
+  zk:
+    driver: bridge
+services:
+  zookeeper-1:
+    image: confluentinc/cp-zookeeper:latest
+    environment:
+      ZOOKEEPER_SERVER_ID: 1
+      ZOOKEEPER_TICK_TIME: 2000
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_INIT_LIMIT: 5
+      ZOOKEEPER_SYNC_LIMIT: 2
+      ZOOKEEPER_SERVERS: zookeeper-1:2888:3888;zookeeper-2:32888:33888;zookeeper-3:42888:43888
+    networks:
+    - default
+    - zk
+    ports:
+    - 22181:2181
+    - 22888:2888
+    - 23888:3888
+
+  zookeeper-2:
+    image: confluentinc/cp-zookeeper:latest
+    environment:
+      ZOOKEEPER_SERVER_ID: 2
+      ZOOKEEPER_TICK_TIME: 2000
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_INIT_LIMIT: 5
+      ZOOKEEPER_SYNC_LIMIT: 2
+      ZOOKEEPER_SERVERS: zookeeper-1:2888:3888;zookeeper-2:32888:33888;zookeeper-3:42888:43888
+    networks:
+    - default
+    - zk
+    ports:
+    - 32181:2181
+    - 32888:2888
+    - 33888:3888
+
+  zookeeper-3:
+    image: confluentinc/cp-zookeeper:latest
+    environment:
+      ZOOKEEPER_SERVER_ID: 3
+      ZOOKEEPER_TICK_TIME: 2000
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_INIT_LIMIT: 5
+      ZOOKEEPER_SYNC_LIMIT: 2
+      ZOOKEEPER_SERVERS: zookeeper-1:2888:3888;zookeeper-2:32888:33888;zookeeper-3:42888:43888
+    networks:
+    - default
+    - zk
+    ports:
+    - 42181:2181
+    - 42888:2888
+    - 43888:3888
+
+  kafka-1:
+    image: confluentinc/cp-kafka:latest
+    networks:
+    - default
+    - zk
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper-1:2181,zookeeper-2:2181,zookeeper-3:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-1:9092
+
+  kafka-2:
+    image: confluentinc/cp-kafka:latest
+    networks:
+    - default
+    - zk
+    environment:
+      KAFKA_BROKER_ID: 2
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper-1:2181,zookeeper-2:2181,zookeeper-3:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-2:9092
+
+  kafka-3:
+    image: confluentinc/cp-kafka:latest
+    networks:
+    - default
+    - zk
+    environment:
+      KAFKA_BROKER_ID: 3
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper-1:2181,zookeeper-2:2181,zookeeper-3:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-3:9092
+
+  restproxy-1:
+      image: confluentinc/cp-kafka-rest:latest
+      depends_on:
+          - zookeeper-1
+          - zookeeper-2
+          - zookeeper-3
+      environment:
+            KAFKA_REST_HOST_NAME: restproxy-1
+            KAFKA_REST_ID_CONFIG: 1
+            KAFKA_REST_ZOOKEEPER_CONNECT: zookeeper-1:2181,zookeeper-2:2181,zookeeper-3:2181
+
+  restproxy-2:
+      image: confluentinc/cp-kafka-rest:latest
+      depends_on:
+          - zookeeper-1
+          - zookeeper-2
+          - zookeeper-3
+      environment:
+            KAFKA_REST_HOST_NAME: restproxy-2
+            KAFKA_REST_ID_CONFIG: 2
+            KAFKA_REST_ZOOKEEPER_CONNECT: zookeeper-1:2181,zookeeper-2:2181,zookeeper-3:2181
+
+  restproxy-3:
+      image: confluentinc/cp-kafka-rest:latest
+      depends_on:
+          - zookeeper-1
+          - zookeeper-2
+          - zookeeper-3
+      environment:
+            KAFKA_REST_HOST_NAME: restproxy-3
+            KAFKA_REST_ID_CONFIG: 3
+            KAFKA_REST_ZOOKEEPER_CONNECT: zookeeper-1:2181,zookeeper-2:2181,zookeeper-3:2181
+
+  nginx:
+    image: nginx:latest
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx_kafka.conf:/etc/nginx/conf.d/kafka_proxy.template
+    links:
+      - restproxy-1
+      - restproxy-2
+      - restproxy-3
+    environment:
+      - NGINX_HOST=nginx
+      - NGINX_PORT=80
+    command: /bin/bash -c "envsubst < /etc/nginx/conf.d/kafka_proxy.template > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"
