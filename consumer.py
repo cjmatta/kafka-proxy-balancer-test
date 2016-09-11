@@ -4,7 +4,7 @@ import logging
 import time
 
 logging.basicConfig()
-logger = logging.getLogger()
+logger = logging.getLogger('consumer')
 logger.setLevel(logging.DEBUG)
 
 class JsonConsumer(object):

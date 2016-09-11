@@ -2,9 +2,10 @@
 import requests
 import logging
 import time
+from configparser import ConfigParser
 
 logging.basicConfig()
-logger = logging.getLogger()
+logger = logging.getLogger('producer')
 logger.setLevel(logging.DEBUG)
 
 class JsonProducer(object):

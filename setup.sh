@@ -13,7 +13,7 @@ fi
 #Python environment
 PYTHON_VENV_DIR=pythontest_env
 if ! [[ -d $PYTHON_VENV_DIR ]]; then
-  virtualenv -p python2.7 $PYTHON_VENV_DIR
+  virtualenv -p $(which python) $PYTHON_VENV_DIR
   source $PYTHON_VENV_DIR/bin/activate
   pip install -r python_requirements.txt
 fi
